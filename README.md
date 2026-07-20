@@ -1,6 +1,6 @@
 # Sway Genshin Rice
 
-![Preview](docs/preview.png)
+[![Preview](https://drive.google.com/thumbnail?id=1vXAIFSZxN91Q9chNWCYA51dj5wXzVXmG&sz=w1000)](https://drive.google.com/file/d/1vXAIFSZxN91Q9chNWCYA51dj5wXzVXmG/view)
 
 Complete Sway (Wayland) dotfiles + universal auto-installer, themed around Genshin Impact characters. Includes video login screen (greetd + mpvpaper), Waybar, Wofi/Anyrun/Rofi, Mako, Kitty, and adaptive Material You colors via matugen.
 
