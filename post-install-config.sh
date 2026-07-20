@@ -252,13 +252,19 @@ EOF
 }
 
 # =====================================================================
-# Deploy sway-run wrapper + user session file (tanpa sudo)
+# Deploy sway-run wrapper (tanpa sudo)
 # =====================================================================
-# gtkgreet memprioritaskan ~/.local/share/wayland-sessions/ di atas
-# /usr/share/wayland-sessions/, sehingga user bisa menimpa Exec=sway
-# bawaan dengan wrapper yang mengekspor env lengkap sebelum sway start.
+# sway-run tetap disediakan di ~/.local/bin (bisa dipakai manual bila perlu
+# env lengkap), TAPI TIDAK dijadikan session file gtkgreet.
+#
+# Alasan: gtkgreet dijalankan sebagai user 'greeter' dan tidak bisa membaca
+# ~/.local/share/wayland-sessions/ milik user. Men-deploy sway-user.desktop
+# di sana percuma, dan membuat gtkgreet menampilkan path (mis.
+# "/home/user/.local/bin/sway-run") alih-alih "sway". Environment variabel
+# Wayland sudah di-set via ~/.config/environment.d/ + blok exec sway config,
+# jadi wrapper tidak wajib jadi session.
 deploy_sway_run_wrapper() {
-    info "=== Deploy sway-run wrapper & user session file ==="
+    info "=== Deploy sway-run wrapper ==="
 
     local repo_dir
     repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -270,12 +276,10 @@ deploy_sway_run_wrapper() {
         ok "sway-run → ~/.local/bin/sway-run"
     fi
 
-    if [[ -f "$repo_dir/common/wayland-sessions/sway-user.desktop" ]]; then
-        mkdir -p "$HOME/.local/share/wayland-sessions"
-        # %h tidak diekspansi oleh desktop entry spec — ganti dengan $HOME literal
-        sed "s|%h|$HOME|g" "$repo_dir/common/wayland-sessions/sway-user.desktop" \
-            > "$HOME/.local/share/wayland-sessions/sway-user.desktop"
-        ok "sway-user.desktop → ~/.local/share/wayland-sessions/"
+    # Bersihkan session file lama yang menyebabkan gtkgreet menampilkan path.
+    if [[ -f "$HOME/.local/share/wayland-sessions/sway-user.desktop" ]]; then
+        rm -f "$HOME/.local/share/wayland-sessions/sway-user.desktop"
+        ok "sway-user.desktop lama dihapus — gtkgreet kembali menampilkan 'sway'."
     fi
 }
 

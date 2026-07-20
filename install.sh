@@ -380,6 +380,20 @@ _has_bin() {
     return 1
 }
 
+# _resolve_bin <name> — cari path ABSOLUT binary di berbagai lokasi umum.
+# Dipakai untuk menulis ExecStart systemd service dengan path yang benar,
+# karena binary bisa terpasang di /usr/bin (repo), /usr/local/bin (source
+# build), ~/.local/bin (kitty), atau ~/.cargo/bin (swww/cargo). Path yang
+# salah membuat service gagal start (mis. waybar/swww tak muncul → layar hitam).
+_resolve_bin() {
+    local b="$1" p
+    p="$(command -v "$b" 2>/dev/null)" && { echo "$p"; return 0; }
+    for p in /usr/local/bin /usr/bin /bin "$HOME/.local/bin" "$HOME/.cargo/bin" /usr/local/libexec /usr/libexec; do
+        [[ -x "$p/$b" ]] && { echo "$p/$b"; return 0; }
+    done
+    return 1
+}
+
 # _has_pkgconf <name> [name2 ...] — cek via pkg-config
 _has_pkgconf() {
     for pkg in "$@"; do
@@ -1562,7 +1576,32 @@ COLORS_EOF
         mkdir -p "$HOME/.config/systemd/user"
         for svc in "$REPO_DIR/common/systemd-user/"*.service; do
             [[ -f "$svc" ]] || continue
-            cp "$svc" "$HOME/.config/systemd/user/$(basename "$svc")"
+            local svc_base dst_svc
+            svc_base=$(basename "$svc")
+            dst_svc="$HOME/.config/systemd/user/$svc_base"
+            cp "$svc" "$dst_svc"
+            # === PERBAIKI ExecStart ke lokasi binary yang BENAR ===
+            # Service template pakai path hardcoded (/usr/local/bin/...,
+            # ~/.cargo/bin/...) yang hanya cocok bila di-build dari source.
+            # Kalau binary datang dari repo (/usr/bin) atau lokasi lain,
+            # service gagal start → waybar & wallpaper tak muncul (layar hitam).
+            # Resolusi path aktual di-inject saat deploy (binary sudah terpasang
+            # di tahap install_core_stack sebelum deploy_configs ini).
+            local svc_bin=""
+            case "$svc_base" in
+                waybar.service)      svc_bin=waybar ;;
+                mako.service)        svc_bin=mako ;;
+                swww-daemon.service) svc_bin=swww-daemon ;;
+            esac
+            if [[ -n "$svc_bin" ]]; then
+                local resolved
+                if resolved="$(_resolve_bin "$svc_bin")"; then
+                    sed -i "s|^ExecStart=.*|ExecStart=$resolved|" "$dst_svc"
+                    info "$svc_base → ExecStart=$resolved"
+                else
+                    warn "Binary '$svc_bin' tidak ditemukan — $svc_base mungkin gagal start."
+                fi
+            fi
         done
         systemctl_user daemon-reload 2>/dev/null || true
         # Enable services (PartOf=graphical-session.target — di-start saat sway aktif)
@@ -1588,16 +1627,22 @@ COLORS_EOF
         ok "Common binaries disalin ke ~/.local/bin/."
     fi
 
-    # common/wayland-sessions/ → ~/.local/share/wayland-sessions/ (session file untuk gtkgreet)
-    # gtkgreet memprioritaskan user-level sessions di atas /usr/share/wayland-sessions/
-    if [[ -d "$REPO_DIR/common/wayland-sessions" ]]; then
-        mkdir -p "$HOME/.local/share/wayland-sessions"
-        for desktop in "$REPO_DIR/common/wayland-sessions/"*.desktop; do
-            [[ -f "$desktop" ]] || continue
-            # Substitusi %h dengan $HOME literal (desktop entry spec tidak expand %h)
-            sed "s|%h|$HOME|g" "$desktop" > "$HOME/.local/share/wayland-sessions/$(basename "$desktop")"
-        done
-        ok "Wayland session files disalin (Sway user env akan muncul di gtkgreet)."
+    # === SESSION FILE (gtkgreet) ===
+    # CATATAN: gtkgreet dijalankan sebagai user 'greeter' (lihat greetd
+    # config.toml), sehingga TIDAK bisa membaca ~/.local/share/wayland-sessions/
+    # milik user. Men-deploy sway-user.desktop ke sana percuma DAN membuat
+    # gtkgreet (yang menampilkan command session) memunculkan path seperti
+    # "/home/user/.local/bin/sway-run" alih-alih "sway".
+    #
+    # Solusi: JANGAN deploy session file user. Biarkan gtkgreet fallback ke
+    # `-c sway` (default command dari greetd sway-config) → label "sway".
+    # Environment variabel Wayland sudah di-set lewat ~/.config/environment.d/
+    # dan blok `exec { export ... }` di config sway, jadi tidak ada yang hilang.
+    #
+    # Bersihkan sisa deploy lama yang menyebabkan bug tampilan path.
+    if [[ -f "$HOME/.local/share/wayland-sessions/sway-user.desktop" ]]; then
+        rm -f "$HOME/.local/share/wayland-sessions/sway-user.desktop"
+        ok "Session file lama (sway-user.desktop) dihapus — gtkgreet kembali menampilkan 'sway'."
     fi
 
     # Swaylock config (Inazuma theme, blurred lock screen)
