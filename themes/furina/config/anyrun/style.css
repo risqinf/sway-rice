@@ -1,0 +1,33 @@
+* {
+  all: unset;
+  font-family: "Rajdhani", "JetBrainsMono Nerd Font", sans-serif;
+  font-size: 1.2rem;
+}
+
+#window {
+  background: rgba(20, 28, 36, 0.80);
+  border: 2px solid #4FA8D8;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+#entry {
+  background: rgba(29, 40, 51, 0.8);
+  border-radius: 12px;
+  color: #E4F0F7;
+  padding: 10px 15px;
+  margin-bottom: 12px;
+}
+
+#match {
+  padding: 8px;
+  border-radius: 10px;
+  color: #CFE2EE;
+  transition: all 0.2s ease-in-out;
+}
+
+#match:hover, #match:selected {
+  background: #4FA8D8;
+  color: #141C24;
+}

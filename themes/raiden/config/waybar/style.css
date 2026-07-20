@@ -1,0 +1,141 @@
+/* =========================================================================
+   WAYBAR STYLE — Matugen Adaptive Colors
+   Warna otomatis dari matugen, dioverwrite tiap ganti wallpaper.
+   ========================================================================= */
+
+@import "colors.css";
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "Rajdhani", "JetBrainsMono Nerd Font", sans-serif;
+    font-size: 15px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: transparent;
+    color: @matugen_on_surface;
+}
+
+/* Animations */
+@keyframes blink {
+    to {
+        background-color: @matugen_error;
+        color: @matugen_background;
+    }
+}
+
+/* Floating Pill Design */
+#workspaces,
+#window,
+#custom-cava,
+#custom-recorder,
+#custom-audio-system,
+#custom-uptime,
+#custom-power,
+#clock,
+#pulseaudio,
+#network,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#backlight,
+#tray {
+    background: alpha(@matugen_surface, 0.85);
+    padding: 0 18px;
+    margin: 0 4px;
+    border-radius: 20px;
+    border: 2px solid @matugen_primary;
+    transition: all 0.2s ease;
+}
+
+/* Spacing tambahan antara icon & teks untuk modul dengan Nerd Font icon.
+   Icon Nerd Font sering "memakan" spasi setelahnya — padding-left pada label
+   menjamin jarak visual yang konsisten. */
+#pulseaudio label,
+#battery label {
+    padding-left: 4px;
+}
+
+/* Sembunyikan module recorder & audio-system saat kosong (idle) */
+/* Module dengan exec-if false akan otomatis tersembunyi oleh waybar */
+
+/* Cava di center — tanpa border, transparan agar menyatu */
+#custom-cava {
+    background: alpha(@matugen_surface, 0.6);
+    border: 2px solid alpha(@matugen_primary, 0.5);
+    padding: 0 20px;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+/* Interactivity (Hover) */
+#workspaces:hover,
+#window:hover,
+#custom-cava:hover,
+#custom-recorder:hover,
+#custom-audio-system:hover,
+#custom-uptime:hover,
+#custom-power:hover,
+#clock:hover,
+#pulseaudio:hover,
+#network:hover,
+#battery:hover,
+#cpu:hover,
+#memory:hover,
+#temperature:hover,
+#backlight:hover {
+    background: @matugen_primary;
+    color: @matugen_on_primary;
+    box-shadow: 0px 0px 8px alpha(@matugen_primary, 0.6);
+}
+
+/* Recorder & Audio System — blinking accent saat aktif */
+#custom-recorder,
+#custom-audio-system {
+    color: @matugen_error;
+    border-color: @matugen_error;
+}
+#custom-recorder:hover,
+#custom-audio-system:hover {
+    background: @matugen_error;
+    color: @matugen_background;
+    box-shadow: 0px 0px 8px alpha(@matugen_error, 0.6);
+}
+
+#workspaces button {
+    padding: 0 8px;
+    color: @matugen_on_surface;
+    transition: all 0.2s ease;
+}
+
+#workspaces button.focused {
+    background: @matugen_tertiary;
+    color: @matugen_background;
+    border-radius: 16px;
+}
+
+#workspaces button:hover {
+    background: @matugen_primary;
+    color: @matugen_on_primary;
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+#battery.charging {
+    color: @matugen_tertiary;
+    border-color: @matugen_tertiary;
+}
+
+#battery.warning:not(.charging) {
+    color: @matugen_secondary;
+    border-color: @matugen_secondary;
+}
+
+#battery.critical:not(.charging) {
+    background: @matugen_error;
+    color: @matugen_background;
+    border-color: @matugen_error;
+    animation: blink 0.5s steps(12) infinite alternate;
+}

@@ -1,0 +1,20 @@
+# --- POSISI & UKURAN ---
+anchor=top-right
+width=350
+# Jarak dari pinggir layar (atas, kanan, bawah, kiri)
+margin=10,10,0,0
+padding=12
+
+# --- ESTETIKA (tema karakter) ---
+font=Rajdhani 11
+border-size=2
+border-radius=6
+
+# Warna adaptif matugen (include dioverwrite tiap ganti wallpaper)
+include=~/.config/mako/colors.ini
+
+# --- PERILAKU ---
+default-timeout=5000
+
+[urgency=high]
+default-timeout=0

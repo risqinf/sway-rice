@@ -1,0 +1,256 @@
+# =========================================================================
+# SWAY MASTER CONFIG - RISQINF FULL INTERACTIVE & WAYBAR
+# =========================================================================
+
+# --- XDG DESKTOP PORTAL / ENVIRONMENT ---
+# Portal (xdg-desktop-portal + xdg-desktop-portal-wlr) TIDAK di-exec manual di sini.
+# Manual exec sebelumnya (pkill + spawn detached background process via `bash -c '... &'`)
+# menyebabkan beberapa masalah nyata:
+#   1. Race condition: proses di-spawn sebelum WAYLAND_DISPLAY/XDG_CURRENT_DESKTOP
+#      sempat di-import ke systemd --user, sehingga portal-wlr bisa gagal detect compositor.
+#   2. Proses tsb berjalan LEPAS dari systemd (bukan child dari service unit), jadi tidak
+#      ikut ke-track sebagai bagian dari session/user manager — ini bisa membuat systemd
+#      "kehilangan jejak" proses saat logout/shutdown dan menunggu (stop job) sampai
+#      timeout, salah satu penyebab reboot/shutdown nge-hang di TTY.
+#   3. Konflik nama bus D-Bus: proses manual & aktivasi D-Bus otomatis bisa sama-sama
+#      mencoba klaim org.freedesktop.impl.portal.desktop.wlr.
+# Solusi: EXPORT variabel secara eksplisit lebih dulu, BARU import ke systemd/dbus.
+# Tanpa export eksplisit, import-environment bisa mengimpor nilai KOSONG bila
+# environment.d belum ter-load (race condition saat login cepat) — inilah penyebab
+# error "XDG_CURRENT_DESKTOP = not set" yang muncul di log saat reboot/shutdown,
+# karena portal gagal mengenali sesi dan systemd menunggu timeout saat stop.
+exec {
+    export XDG_CURRENT_DESKTOP=sway
+    export XDG_SESSION_DESKTOP=sway
+    export XDG_SESSION_TYPE=wayland
+    systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE
+    hash dbus-update-activation-environment 2>/dev/null && \
+        dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE
+    # Aktifkan graphical-session.target SEKARANG (setelah env siap).
+    # Service ini Type=oneshot+RemainAfterExit sehingga menahan target tetap
+    # aktif selama sway berjalan, lalu turun bersama saat sway exit — semua
+    # PartOf=graphical-session.target (portal, waybar, dsb.) ikut distop rapi.
+    systemctl --user start sway-graphical-session.service
+}
+
+# Portal (xdg-desktop-portal, -wlr, -gtk) adalah Type=dbus + PartOf=
+# graphical-session.target — systemd mengaktifkannya on-demand via D-Bus
+# activation dan menghentikannya otomatis saat target turun. Tidak perlu
+# restart manual (yang sebelumnya justru menimbulkan race saat shutdown).
+
+# --- ENVIRONMENT ---
+exec_always {
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+}
+
+set $mod Mod4
+set $term ~/.local/bin/kitty
+
+# --- MENU & PANDUAN ---
+set $menu bash -c 'if command -v anyrun >/dev/null; then anyrun; elif command -v rofi >/dev/null; then rofi -show drun; else wofi --show drun --allow-images --prompt="Cari Aplikasi:"; fi'
+set $shortcuts_help $term --class floating_help -e bash -c "echo -e '=== SHORTCUT RISQINF ===\n\nSuper+D : Launcher (Anyrun/Wofi)\nSuper+E : File Explorer\nSuper+Shift+E : Menu Daya\nSuper+P/O/I : Mode Baterai\nSuper+Panah : Navigasi Jendela\nPrint : Screenshot Area\nShift+Print : Screenshot Full\n\n[ENTER TUTUP]'; read"
+
+# --- INPUT & TOUCHPAD ---
+input "type:touchpad" {
+    tap enabled
+    natural_scroll enabled
+    click_method button_areas
+    middle_emulation enabled
+    dwt enabled
+}
+bindgesture swipe:right workspace prev
+bindgesture swipe:left workspace next
+
+# --- ESTETIKA JENDELA ---
+# Hyprland-style dwindle: window baru otomatis split bergantian
+# (kanan → bawah → kanan → dst) berdasarkan orientasi container parent
+default_orientation auto
+# Manual split override (jika user mau kontrol)
+bindsym $mod+h split h
+bindsym $mod+v split v
+bindsym $mod+Shift+space layout toggle split
+workspace_layout default
+default_border normal 2
+gaps inner 2
+# Waybar (layer:top, height 38, margin-top 6) sudah reserve 44px exclusive zone.
+# gaps top hanya perlu 2px buffer agar border tidak nempel waybar.
+gaps outer 2
+gaps top 2
+smart_gaps off
+smart_borders on
+
+# Auto-split untuk semua window baru (Hyprland dwindle-style)
+for_window [app_id=".*"] exec bash ~/.local/bin/auto-split.sh
+for_window [class=".*"] exec bash ~/.local/bin/auto-split.sh
+
+# --- PINTASAN KEYBOARD DASAR ---
+bindsym $mod+Return exec $term
+bindsym $mod+d exec $menu
+bindsym $mod+e exec bash -c 'if [ -x ~/.local/bin/cosmic-files ]; then ~/.local/bin/cosmic-files; elif command -v cosmic-files >/dev/null; then cosmic-files; elif command -v nautilus >/dev/null; then nautilus; else thunar; fi'
+bindsym $mod+Shift+h exec $shortcuts_help
+bindsym $mod+Shift+q kill
+bindsym $mod+f fullscreen toggle
+
+# --- FOKUS & PINDAH JENDELA (ARROW KEYS) ---
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# --- SCREENSHOT (SIMPAN & CLIPBOARD) ---
+bindsym Print exec bash -c 'mkdir -p ~/Pictures/Screenshots && FILE=~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png && grim -g "$(slurp)" $FILE && wl-copy < $FILE'
+bindsym Shift+Print exec bash -c 'mkdir -p ~/Pictures/Screenshots && FILE=~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png && grim $FILE && wl-copy < $FILE'
+
+# Screen Recorder
+bindsym $mod+Shift+r exec bash ~/.config/sway/gui-recorder.sh
+
+# --- MANAJEMEN DAYA (SYSTEM MODE) ---
+bindsym $mod+Shift+e exec bash ~/.config/sway/powermenu.sh
+# Lock cepat (Super+L) — pakai script dengan blurred screenshot background
+bindsym $mod+l exec ~/.config/sway/lock.sh
+
+# --- THEME SWITCHER (geser kiri/kanan berganti tema) ---
+bindsym $mod+t exec bash ~/.local/bin/theme-switcher.sh
+bindsym $mod+y exec bash ~/.local/bin/theme-switch-wofi.sh
+bindsym $mod+Shift+t exec bash ~/.local/bin/theme-switch.sh next
+bindsym $mod+w exec bash ~/.local/bin/wallpaper-picker.sh
+
+# --- R/UNIXPORN UI (launcher besar, emoji, clipboard, quick settings) ---
+bindsym $mod+Shift+d exec bash ~/.local/bin/app-launcher.sh
+bindsym $mod+period exec bash ~/.local/bin/emoji-picker.sh
+bindsym $mod+Shift+v exec bash ~/.local/bin/clipboard-history.sh
+bindsym $mod+Shift+s exec bash ~/.local/bin/quick-settings.sh
+
+# --- MODE PERFORMA (TUNED) ---
+bindsym $mod+p exec tuned-adm profile throughput-performance && notify-send "Mode: Performance"
+bindsym $mod+o exec tuned-adm profile balanced && notify-send "Mode: Balanced"
+bindsym $mod+i exec tuned-adm profile powersave && notify-send "Mode: Power Saver"
+
+# --- FN KEYS (VOLUME & KECERAHAN) ---
+bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
+bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+bindsym XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+
+# Kecerahan Up & Down
+bindsym XF86MonBrightnessUp exec bash -c 'if command -v brightnessctl >/dev/null; then brightnessctl set 5%+; else bash ~/.config/sway/brightness.sh up; fi'
+bindsym XF86MonBrightnessDown exec bash -c 'if command -v brightnessctl >/dev/null; then brightnessctl set 5%-; else bash ~/.config/sway/brightness.sh down; fi'
+bindcode 233 exec bash -c 'if command -v brightnessctl >/dev/null; then brightnessctl set 5%+; else bash ~/.config/sway/brightness.sh up; fi'
+bindcode 232 exec bash -c 'if command -v brightnessctl >/dev/null; then brightnessctl set 5%-; else bash ~/.config/sway/brightness.sh down; fi'
+
+
+# --- WORKSPACE HIRAGANA (Anti Bug Pemotong Teks) ---
+set $ws1 "1. いち"
+set $ws2 "2. に"
+set $ws3 "3. さん"
+set $ws4 "4. よん"
+set $ws5 "5. ご"
+set $ws6 "6. ろく"
+set $ws7 "7. なな"
+set $ws8 "8. はち"
+set $ws9 "9. きゅう"
+set $ws10 "10. じゅう"
+
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+bindsym $mod+0 workspace $ws10
+
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
+bindsym $mod+Shift+0 move container to workspace $ws10
+
+# --- AUTOSTART KHUSUS ---
+# nm-applet tidak tersedia di Rocky 10 (hanya nm-connection-editor).
+# Gunakan `nmtui` atau `nm-connection-editor` bila perlu konfigurasi jaringan.
+# Alternatif tray network: install blueman-applet (bluetooth) atau iwgtk.
+
+# HEMAT RAM/CPU SAAT IDLE:
+# opacity 1.0 (bukan 0.95) membuat compositor bisa skip alpha-blending render
+# pass tiap frame — opacity < 1 memaksa wlroots merender semua window lewat
+# blending terus-menerus, menaikkan beban GPU/CPU bahkan saat idle.
+for_window [app_id=".*"] border normal 2
+for_window [class=".*"] border normal 2
+mouse_warping none
+# Matikan output display setelah 10 menit idle — penghemat baterai terbesar
+# untuk laptop (panel backlight + GPU display pipeline benar-benar off).
+# Guard `command -v` agar config tetap valid walau swayidle belum terinstall.
+exec bash -c 'command -v swayidle >/dev/null && exec swayidle -w \
+    timeout 300 "~/.config/sway/lock.sh" \
+    timeout 600 "swaymsg \"output * power off\"" \
+    resume "swaymsg \"output * power on\"" \
+    before-sleep "~/.config/sway/lock.sh" \
+    lock "~/.config/sway/lock.sh" || true'
+
+# 🎨 WALLPAPER + WARNA ADAPTIF (swww + matugen)
+# swww-daemon dijalankan sebagai systemd user service (swww-daemon.service)
+# yang terikat ke graphical-session.target — bersih saat shutdown.
+exec bash -c 'export PATH="$HOME/.cargo/bin:$PATH"; sleep 1 && command -v swww >/dev/null && [ -f ~/wallpaper/desktop-wallpaper.png ] && \
+    swww img ~/wallpaper/desktop-wallpaper.png --transition-type fade --transition-duration 1 2>/dev/null || true'
+exec bash -c 'export PATH="$HOME/.cargo/bin:$PATH"; sleep 1.5 && command -v matugen >/dev/null && [ -f ~/wallpaper/desktop-wallpaper.png ] && \
+    matugen image ~/wallpaper/desktop-wallpaper.png --prefer saturation >/dev/null 2>&1 || true'
+
+# --- BAR INTERAKTIF (WAYBAR) ---
+# waybar & mako juga systemd user services — tidak perlu exec/pkill manual.
+# Reload config tetap berfungsi via `systemctl --user restart waybar mako`.
+# Simpan workspace aktif sebelum reload, restore setelah — mencegah jump.
+# Pakai workspace number (bukan nama) agar konsisten dengan hiragana labels.
+bindsym $mod+Shift+c exec bash -c 'ws=$(swaymsg -t get_workspaces | python3 -c "import json,sys; ws=json.load(sys.stdin); print([w[\"num\"] for w in ws if w[\"focused\"]][0])"); swaymsg reload; sleep 0.5; swaymsg workspace number $ws'
+
+# --- SCRATCHPAD (khas r/unixporn) ---
+# Terminal drop-down (Super+`) dan music player (Super+m)
+set $scratch_term kitty --class scratchpad_term
+set $scratch_music $term --class scratchpad_music -e bash -c 'command -v ncmpcpp >/dev/null && ncmpcpp || command -v musikcube >/dev/null && musikcube || bash'
+
+for_window [app_id="scratchpad_term"] floating enable, resize set 80ppt 60ppt, move position center, border pixel 2
+for_window [app_id="scratchpad_music"] floating enable, resize set 70ppt 70ppt, move position center, border pixel 2
+for_window [class="scratchpad_term"] floating enable, resize set 80ppt 60ppt, move position center, border pixel 2
+for_window [class="scratchpad_music"] floating enable, resize set 70ppt 70ppt, move position center, border pixel 2
+
+bindsym $mod+grave exec bash -c 'swaymsg "[app_id=scratchpad_term] scratchpad show" 2>/dev/null | grep -q true || exec $scratch_term'
+bindsym $mod+m exec bash -c 'swaymsg "[app_id=scratchpad_music] scratchpad show" 2>/dev/null | grep -q true || exec $scratch_music'
+# Kirim window aktif ke scratchpad
+bindsym $mod+Shift+minus move scratchpad
+bindsym $mod+minus scratchpad show
+
+# --- FLOATING WINDOW RULES (utility apps) ---
+for_window [app_id="pavucontrol"] floating enable, resize set 60ppt 70ppt, move position center
+for_window [app_id="blueman-manager"] floating enable, resize set 60ppt 60ppt, move position center
+for_window [app_id="nm-connection-editor"] floating enable, resize set 60ppt 70ppt, move position center
+for_window [app_id="floating_help"] floating enable, resize set 60ppt 70ppt, move position center, sticky enable
+for_window [app_id="org.gnome.Calculator"] floating enable, resize set 40ppt 60ppt, move position center
+for_window [app_id="org.gnome.clocks"] floating enable
+for_window [title="Picture-in-Picture"] floating enable, sticky enable, resize set 25ppt 25ppt, move position 73ppt 70ppt
+for_window [app_id="firefox" title="^Picture-in-Picture$"] floating enable, sticky enable
+# Dialog boxes selalu floating
+for_window [window_role="dialog"] floating enable, move position center
+for_window [window_role="pop-up"] floating enable
+for_window [window_type="dialog"] floating enable, move position center
+
+include ~/.config/sway/colors.conf
+seat seat0 xcursor_theme RaidenShogun 28
+
+# --- CLEANUP SAAT SWAY EXIT ---
+# Semua komponen sesi (waybar, mako, swww-daemon, portal) sudah jadi
+# systemd user services dengan PartOf=graphical-session.target — systemd
+# yang menghentikan mereka otomatis saat sway exit. Tidak perlu script
+# cleanup manual; systemd menjamin tidak ada orphan yang menahan shutdown.
+

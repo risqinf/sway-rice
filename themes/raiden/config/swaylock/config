@@ -1,0 +1,52 @@
+# swaylock config — Genshin Inazuma aesthetic
+# Dokumentasi: man swaylock
+
+# Background: blur wallpaper saat ini (fallback: solid color)
+# Untuk blur screenshot: pakai swaylock-effects atau script wrapper
+color=0f0e14
+bs-hl-color=9370db
+caps-lock-bs-hl-color=9370db
+caps-lock-key-hl-color=d4af37
+inside-color=1a1826dd
+inside-clear-color=1a1826dd
+inside-caps-lock-color=1a1826dd
+inside-ver-color=1a1826dd
+inside-wrong-color=2d1b2edd
+key-hl-color=d4af37
+layout-bg-color=1a1826dd
+layout-border-color=9370db
+layout-text-color=f4e4bc
+line-color=00000000
+line-clear-color=00000000
+line-caps-lock-color=00000000
+line-ver-color=00000000
+line-wrong-color=00000000
+ring-color=9370db
+ring-clear-color=d4af37
+ring-caps-lock-color=d4af37
+ring-ver-color=6a5acd
+ring-wrong-color=dc143c
+separator-color=00000000
+text-color=f4e4bc
+text-clear-color=d4af37
+text-caps-lock-color=d4af37
+text-ver-color=f4e4bc
+text-wrong-color=ff6b6b
+
+# Behavior
+indicator-radius=100
+indicator-thickness=8
+ignore-empty-password
+show-failed-attempts
+daemonize
+
+# Clock
+indicator-idle-visible=false
+clock
+timestr=%H:%M
+datestr=%A, %d %B %Y
+font=JetBrainsMono Nerd Font
+font-size=24
+
+# Fade-in smooth (butuh swaylock >= 1.6)
+fade-in=0.2

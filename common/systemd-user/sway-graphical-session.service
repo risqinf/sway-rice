@@ -1,0 +1,25 @@
+[Unit]
+Description=Sway graphical session helper
+# Keep graphical-session.target alive selama sway berjalan.
+# Service ini di-start EKSPLISIT oleh sway config via
+# `systemctl --user start sway-graphical-session.service`
+# SETELAH WAYLAND_DISPLAY & XDG_CURRENT_DESKTOP di-import,
+# sehingga tidak ada race condition dengan default.target.
+Wants=graphical-session.target
+Before=graphical-session.target
+# Jangan pakai ConditionEnvironment di sini — service ini hanya dipanggil
+# setelah environment sudah siap (dari sway exec).
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+RemainAfterExit=yes
+# Saat sway exit & service ini stop, graphical-session.target ikut turun,
+# sehingga semua PartOf=graphical-session.target (portal, waybar, dsb.)
+# distop systemd dengan rapi — tidak ada lagi orphan saat shutdown.
+ExecStop=/bin/true
+
+[Install]
+# JANGAN WantedBy=default.target — itu penyebab race condition
+# (default.target jalan sebelum WAYLAND_DISPLAY ada).
+# Service ini hanya di-start manual dari sway config.

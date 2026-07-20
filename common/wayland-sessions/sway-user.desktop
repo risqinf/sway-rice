@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Sway (user env)
+Comment=Sway dengan environment lengkap (user-level wrapper)
+Exec=%h/.local/bin/sway-run
+Type=Application
+DesktopNames=sway

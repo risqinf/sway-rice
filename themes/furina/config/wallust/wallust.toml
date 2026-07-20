@@ -1,0 +1,13 @@
+# wallust 3.0 configuration
+
+# How the colors will be extracted
+backend = "wal"
+
+# Color space to use for palette generation
+color_space = "lab"
+
+# Threshold for difference between colors (0-100)
+threshold = 20
+
+# Filter out colors based on the image's overall luminance
+filter = "dark16"

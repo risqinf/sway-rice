@@ -1,0 +1,141 @@
+/* =====================================================
+   GENSHIN IMPACT / FURINA (FONTAINE) — gtkgreet
+   Biru cyan cerah + aksen putih-air, latar gelap navy
+   ===================================================== */
+
+window {
+    background-color: transparent;
+}
+
+/* KOTAK UTAMA — glow cyan biru + frame putih-air */
+box#body {
+    background-color: rgba(13, 20, 27, 0.85);
+    border: 1px solid rgba(156, 201, 232, 0.35);
+    border-radius: 16px;
+    padding: 46px 56px;
+    box-shadow:
+        0px 0px 0px 1px rgba(95, 223, 212, 0.25),
+        0px 0px 28px rgba(79, 168, 216, 0.45),
+        0px 0px 55px rgba(95, 223, 212, 0.16),
+        inset 0px 1px 0px rgba(255, 255, 255, 0.06);
+}
+
+/* JUDUL / GREETING TEXT */
+label.greeting,
+label#greeting {
+    color: #DCEEFB;
+    font-family: 'Rajdhani', 'Noto Sans', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-shadow: 0px 0px 12px rgba(95, 223, 212, 0.5);
+    margin-bottom: 20px;
+}
+
+/* LABEL UMUM */
+label {
+    color: #A9C8DC;
+    font-family: 'Rajdhani', 'Noto Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-shadow: 0px 0px 6px rgba(79, 168, 216, 0.3);
+    margin-bottom: 8px;
+}
+
+/* INPUT FIELD */
+entry {
+    background-color: rgba(0, 0, 0, 0.45);
+    color: #FFFFFF;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    border: none;
+    border-bottom: 2px solid rgba(136, 136, 136, 0.6);
+    border-radius: 6px 6px 0px 0px;
+    min-height: 40px;
+    padding: 4px 16px;
+    margin-bottom: 18px;
+    caret-color: #5FDFD4;
+    transition: all 150ms ease;
+}
+
+entry image {
+    min-width: 20px;
+    min-height: 20px;
+    padding: 0 4px;
+    color: #A9C8DC;
+}
+
+entry:focus {
+    border-bottom: 2px solid #5FDFD4;
+    background-color: rgba(79, 168, 216, 0.20);
+    box-shadow: inset 0px -2px 8px rgba(95, 223, 212, 0.25);
+}
+
+entry placeholder {
+    color: rgba(169, 200, 220, 0.4);
+}
+
+/* DROPDOWN SESI */
+dropdown,
+combobox,
+combobox button {
+    background-color: rgba(0, 0, 0, 0.45);
+    color: #BEE3F5;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    border: 1px solid rgba(79, 168, 216, 0.5);
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+dropdown:hover,
+combobox button:hover {
+    border: 1px solid #5FDFD4;
+}
+
+/* TOMBOL LOGIN */
+button {
+    background-color: #D8E9F4;
+    color: #10181F;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    border: none;
+    border-radius: 24px;
+    padding: 11px 30px;
+    margin-top: 16px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 200ms ease;
+}
+
+button:hover {
+    background-color: #4FA8D8;
+    color: #FFFFFF;
+    box-shadow:
+        0px 0px 18px rgba(79, 168, 216, 0.65),
+        0px 0px 30px rgba(95, 223, 212, 0.35);
+}
+
+button:active {
+    background-color: #2C6E96;
+    color: #FFFFFF;
+}
+
+/* SEPARATOR */
+separator {
+    background-color: rgba(95, 223, 212, 0.3);
+    min-height: 1px;
+    margin: 12px 0px;
+}
+
+/* ERROR MESSAGE */
+label.error,
+label#error-label {
+    color: #FF8A80;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-shadow: 0px 0px 8px rgba(255, 138, 128, 0.4);
+}

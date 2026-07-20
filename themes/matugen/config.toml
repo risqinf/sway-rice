@@ -1,0 +1,33 @@
+# Konfigurasi matugen — sway-rice
+# Generate warna Material You dari wallpaper, tulis ke file yang di-source
+# oleh waybar, kitty, mako, dan sway borders. Mode gelap permanen.
+
+[config]
+
+[templates.waybar]
+input_path  = "~/.config/matugen/templates/waybar-colors.css"
+output_path = "~/.config/waybar/colors.css"
+
+[templates.kitty]
+input_path  = "~/.config/matugen/templates/kitty-colors.conf"
+output_path = "~/.config/kitty/colors.conf"
+
+[templates.mako]
+input_path  = "~/.config/matugen/templates/mako-colors.ini"
+output_path = "~/.config/mako/colors.ini"
+
+[templates.sway]
+input_path  = "~/.config/matugen/templates/sway-colors.conf"
+output_path = "~/.config/sway/colors.conf"
+
+[templates.gtk]
+input_path  = "~/.config/matugen/templates/gtk-colors.css"
+output_path = "~/.config/gtk-3.0/colors.css"
+
+[templates.rofi]
+input_path  = "~/.config/matugen/templates/rofi-colors.rasi"
+output_path = "~/.config/rofi/colors.rasi"
+
+[templates.cava]
+input_path  = "~/.config/matugen/templates/cava-colors.ini"
+output_path = "~/.config/cava/colors.ini"

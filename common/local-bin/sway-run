@@ -1,0 +1,45 @@
+#!/bin/sh
+# Sway session wrapper (user-level, ~/.local/bin/sway-run)
+# Menjamin environment variable lengkap sebelum sway start — menggantikan
+# kebutuhan /etc/environment atau session file di /usr/share.
+# Dipanggil dari ~/.local/share/wayland-sessions/sway-user.desktop (gtkgreet
+# memprioritaskan sessions user-level di atas system-level).
+
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_DESKTOP=sway
+export XDG_SESSION_TYPE=wayland
+export MOZ_ENABLE_WAYLAND=1
+export QT_QPA_PLATFORM=wayland
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export SDL_VIDEODRIVER=wayland
+export CLUTTER_BACKEND=wayland
+export _JAVA_AWT_WM_NONREPARENTING=1
+
+# PATH: pastikan .local/bin, .cargo/bin, /usr/local/bin tersedia
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
+
+# Pilih binary sway yang tersedia
+SWAY_BIN=sway
+if [ -x /usr/local/bin/sway ]; then
+    SWAY_BIN=/usr/local/bin/sway
+fi
+
+# Import environment ke systemd --user dan D-Bus SECEPAT MUNGKIN, sebelum sway
+# start. WAYLAND_DISPLAY belum ada di sini (sway yang membuatnya), tapi
+# XDG_CURRENT_DESKTOP & XDG_SESSION_* sudah final — portal & kawan-kawannya
+# butuh ini agar tidak gagal detect desktop saat D-Bus activation.
+systemctl --user import-environment \
+    XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE \
+    MOZ_ENABLE_WAYLAND QT_QPA_PLATFORM QT_WAYLAND_DISABLE_WINDOWDECORATION \
+    SDL_VIDEODRIVER CLUTTER_BACKEND _JAVA_AWT_WM_NONREPARENTING PATH 2>/dev/null || true
+if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+    dbus-update-activation-environment --systemd \
+        XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE \
+        MOZ_ENABLE_WAYLAND QT_QPA_PLATFORM QT_WAYLAND_DISABLE_WINDOWDECORATION \
+        SDL_VIDEODRIVER CLUTTER_BACKEND _JAVA_AWT_WM_NONREPARENTING PATH 2>/dev/null || true
+fi
+
+# Jalankan sway. Setelah sway mengisi WAYLAND_DISPLAY/SWAYSOCK/DISPLAY, blok
+# `exec` di sway config melakukan import-environment lanjutan + start
+# sway-graphical-session.service (yang mengaktifkan graphical-session.target).
+exec "$SWAY_BIN" "$@"

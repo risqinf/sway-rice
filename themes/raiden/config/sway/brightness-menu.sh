@@ -1,0 +1,1 @@
+../../../../common/scripts/brightness-menu.sh

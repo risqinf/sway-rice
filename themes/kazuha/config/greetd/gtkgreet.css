@@ -1,0 +1,140 @@
+/* =====================================================
+   GENSHIN IMPACT / KAZUHA (KAZUHA (MAPLE)) — gtkgreet
+   ===================================================== */
+
+window {
+    background-color: transparent;
+}
+
+/* KOTAK UTAMA — ornamen ganda: outer glow ungu electro + inner gold frame */
+box#body {
+    background-color: rgba(15, 14, 20, 0.82);
+    border: 1px solid rgba(240, 154, 94, 0.35);
+    border-radius: 16px;
+    padding: 46px 56px;
+    box-shadow:
+        0px 0px 0px 1px rgba(224, 118, 60, 0.25),
+        0px 0px 28px rgba(224, 118, 60, 0.45),
+        0px 0px 55px rgba(240, 154, 94, 0.18),
+        inset 0px 1px 0px rgba(255, 255, 255, 0.06);
+}
+
+/* JUDUL / GREETING TEXT (jika ada) */
+label.greeting,
+label#greeting {
+    color: #F8E8D8;
+    font-family: 'Rajdhani', 'Noto Sans', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-shadow: 0px 0px 12px rgba(240, 154, 94, 0.5);
+    margin-bottom: 20px;
+}
+
+/* LABEL UMUM */
+label {
+    color: #E0B8A0;
+    font-family: 'Rajdhani', 'Noto Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-shadow: 0px 0px 6px rgba(224, 118, 60, 0.3);
+    margin-bottom: 8px;
+}
+
+/* INPUT FIELD — garis bawah ganda gold/electro */
+entry {
+    background-color: rgba(0, 0, 0, 0.45);
+    color: #FFFFFF;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    border: none;
+    border-bottom: 2px solid rgba(136, 136, 136, 0.6);
+    border-radius: 6px 6px 0px 0px;
+    min-height: 40px;
+    padding: 4px 16px;
+    margin-bottom: 18px;
+    caret-color: #F09A5E;
+    transition: all 150ms ease;
+}
+
+entry image {
+    min-width: 20px;
+    min-height: 20px;
+    padding: 0 4px;
+    color: #E0B8A0;
+}
+
+entry:focus {
+    border-bottom: 2px solid #F09A5E;
+    background-color: rgba(224, 118, 60, 0.22);
+    box-shadow: inset 0px -2px 8px rgba(240, 154, 94, 0.25);
+}
+
+entry placeholder {
+    color: rgba(224, 184, 160, 0.4);
+}
+
+/* DROPDOWN SESI */
+dropdown,
+combobox,
+combobox button {
+    background-color: rgba(0, 0, 0, 0.45);
+    color: #F5D0A8;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    border: 1px solid rgba(224, 118, 60, 0.5);
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+dropdown:hover,
+combobox button:hover {
+    border: 1px solid #F09A5E;
+}
+
+/* TOMBOL LOGIN — gaya washi/kertas kuno dengan aksen emas saat hover */
+button {
+    background-color: #F5E8DC;
+    color: #1A1A1A;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    border: none;
+    border-radius: 24px;
+    padding: 11px 30px;
+    margin-top: 16px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 200ms ease;
+}
+
+button:hover {
+    background-color: #F09A5E;
+    color: #FFFFFF;
+    box-shadow:
+        0px 0px 18px rgba(240, 154, 94, 0.65),
+        0px 0px 30px rgba(224, 118, 60, 0.35);
+}
+
+button:active {
+    background-color: #8C4A20;
+    color: #FFFFFF;
+}
+
+/* SEPARATOR (jika gtkgreet pakai) */
+separator {
+    background-color: rgba(240, 154, 94, 0.3);
+    min-height: 1px;
+    margin: 12px 0px;
+}
+
+/* ERROR MESSAGE (auth gagal) */
+label.error,
+label#error-label {
+    color: #FF6B6B;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-shadow: 0px 0px 8px rgba(255, 107, 107, 0.4);
+}

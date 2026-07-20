@@ -1,0 +1,24 @@
+[Unit]
+Description=Waybar - Highly customizable Wayland bar
+PartOf=graphical-session.target
+After=graphical-session.target
+# JANGAN ConditionEnvironment=WAYLAND_DISPLAY.
+# Unit ini di-start via graphical-session.target yang baru aktif SETELAH sway
+# mengisi WAYLAND_DISPLAY — tapi condition dievaluasi sekali di awal transaksi,
+# sebelum env ter-import, sehingga waybar di-skip PERMANEN dan tidak pernah
+# restart (inilah yang membuat waybar jadi orphan sebelumnya). Andalkan
+# Restart=on-failure untuk retry sampai WAYLAND_DISPLAY siap.
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/waybar
+Restart=on-failure
+RestartSec=1
+# Berhenti cepat & bersih saat session turun — jangan biarkan jadi orphan
+# yang menahan stop job saat shutdown/reboot.
+TimeoutStopSec=3
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=graphical-session.target

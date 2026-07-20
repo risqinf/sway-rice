@@ -1,0 +1,21 @@
+# ==========================================
+# SWAY CONFIG KHUSUS LOGIN SCREEN (GENSHIN)
+# Berjalan sebagai user 'greeter' dengan PATH minimal
+# Login screen memakai WALLPAPER STATIS per tema via swaybg.
+# ==========================================
+default_border none
+
+# Wallpaper statis login (disalin installer dari tema aktif).
+# swaybg lebih ringan & stabil daripada mpvpaper untuk layar login.
+exec "SWAYBG=$(command -v swaybg 2>/dev/null || echo /usr/local/bin/swaybg) && \
+      $SWAYBG -o '*' -i /etc/greetd/wallpaper/login-wallpaper.png -m fill \
+      > /tmp/swaybg.log 2>&1 || true"
+
+exec "sleep 1 && \
+      GTKGREET=$(command -v gtkgreet 2>/dev/null || echo /usr/local/bin/gtkgreet) && \
+      env GTK_THEME=Adwaita:dark $GTKGREET -l -c sway -s /etc/greetd/gtkgreet.css \
+      > /tmp/gtkgreet.log 2>&1; \
+      SWAYMSG=$(command -v swaymsg 2>/dev/null || echo /usr/local/bin/swaymsg) && \
+      $SWAYMSG exit"
+
+exec_always gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'

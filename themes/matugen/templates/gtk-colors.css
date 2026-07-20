@@ -1,0 +1,4 @@
+/* Warna hasil matugen */
+@define-color matugen_primary {{colors.primary.dark.hex}};
+@define-color matugen_surface {{colors.surface.dark.hex}};
+@define-color matugen_on_surface {{colors.on_surface.dark.hex}};

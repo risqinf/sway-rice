@@ -1,0 +1,120 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "kitty-direct",
+        "source": "~/wallpaper/fastfetch.png",
+        "width": 30,
+        "height": 18,
+        "position": "left",
+        "padding": {
+            "top": 2,
+            "left": 2,
+            "right": 6
+        }
+    },
+    "display": {
+        "separator": " │ ",
+        "color": {
+            "separator": "90"
+        },
+        "key": {
+            "width": 14
+        }
+    },
+    "modules": [
+        "break",
+        {
+            "type": "title",
+            "color": {
+                "user": "magenta",
+                "at": "white",
+                "host": "cyan"
+            }
+        },
+        {
+            "type": "custom",
+            "format": "────────────────────────────────",
+            "outputColor": "90"
+        },
+        {
+            "type": "os",
+            "key": "󰣇 OS",
+            "keyColor": "blue"
+        },
+        {
+            "type": "kernel",
+            "key": " Kernel",
+            "keyColor": "blue"
+        },
+        {
+            "type": "uptime",
+            "key": "󰔚 Uptime",
+            "keyColor": "blue"
+        },
+        {
+            "type": "packages",
+            "key": "󰏖 Packages",
+            "keyColor": "blue"
+        },
+        {
+            "type": "custom",
+            "format": ""
+        },
+        {
+            "type": "wm",
+            "key": " WM",
+            "keyColor": "magenta"
+        },
+        {
+            "type": "terminal",
+            "key": " Terminal",
+            "keyColor": "magenta"
+        },
+        {
+            "type": "shell",
+            "key": " Shell",
+            "keyColor": "magenta"
+        },
+        {
+            "type": "custom",
+            "format": ""
+        },
+        {
+            "type": "cpu",
+            "key": " CPU",
+            "keyColor": "green"
+        },
+        {
+            "type": "gpu",
+            "key": "󰢮 GPU",
+            "keyColor": "green"
+        },
+        {
+            "type": "memory",
+            "key": "󰍛 Memory",
+            "keyColor": "green",
+            "percent": {
+                "type": 9,
+                "green": 50,
+                "yellow": 75
+            }
+        },
+        {
+            "type": "disk",
+            "key": "󰋊 Disk",
+            "keyColor": "green",
+            "folders": "/"
+        },
+        {
+            "type": "disk",
+            "key": "󰋊 Home",
+            "keyColor": "green",
+            "folders": "/home"
+        },
+        "break",
+        {
+            "type": "colors",
+            "symbol": "circle"
+        }
+    ]
+}

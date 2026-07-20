@@ -1,0 +1,43 @@
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.bak.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Build artifacts
+build/
+builddir/
+target/
+*.o
+*.so
+*.a
+
+# Node
+node_modules/
+
+# Environment
+.env
+
+# IDE / AI assistant
+.claude/
+.qwen/
+
+# Cache
+.cache/

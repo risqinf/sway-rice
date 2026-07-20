@@ -1,0 +1,47 @@
+window {
+    margin: 0px;
+    border: 2px solid #E05A4E;
+    background-color: rgba(33, 22, 23, 0.85);
+    border-radius: 5px;
+    font-family: 'Inter', sans-serif;
+}
+
+#input {
+    margin: 10px;
+    border: none;
+    color: #F5E8E6;
+    background-color: rgba(46, 30, 32, 0.90);
+    padding: 8px;
+    border-radius: 3px;
+}
+
+#inner-box {
+    margin: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+#outer-box {
+    margin: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+#text {
+    margin: 5px;
+    color: #E8D5D2;
+}
+
+#entry {
+    padding: 2px;
+}
+
+#entry:selected {
+    background-color: rgba(224, 90, 78, 0.90);
+    border-radius: 3px;
+}
+
+#text:selected {
+    color: #211617;
+    font-weight: bold;
+}

@@ -1,0 +1,11 @@
+/* Warna hasil matugen — jangan edit manual, dioverwrite tiap ganti wallpaper */
+@define-color matugen_primary {{colors.primary.dark.hex}};
+@define-color matugen_on_primary {{colors.on_primary.dark.hex}};
+@define-color matugen_primary_container {{colors.primary_container.dark.hex}};
+@define-color matugen_secondary {{colors.secondary.dark.hex}};
+@define-color matugen_tertiary {{colors.tertiary.dark.hex}};
+@define-color matugen_surface {{colors.surface.dark.hex}};
+@define-color matugen_on_surface {{colors.on_surface.dark.hex}};
+@define-color matugen_surface_container {{colors.surface_container.dark.hex}};
+@define-color matugen_background {{colors.background.dark.hex}};
+@define-color matugen_error {{colors.error.dark.hex}};
