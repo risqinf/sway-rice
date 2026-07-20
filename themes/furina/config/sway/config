@@ -31,6 +31,9 @@ exec {
     # aktif selama sway berjalan, lalu turun bersama saat sway exit — semua
     # PartOf=graphical-session.target (portal, waybar, dsb.) ikut distop rapi.
     systemctl --user start sway-graphical-session.service
+    # Jaring pengaman: start eksplisit per-nama (kalau enable ke target belum
+    # ter-apply). Aman bila service sudah aktif atau belum ter-install.
+    systemctl --user start waybar.service mako.service swww-daemon.service
 }
 
 # Portal (xdg-desktop-portal, -wlr, -gtk) adalah Type=dbus + PartOf=

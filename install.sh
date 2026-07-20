@@ -1412,6 +1412,132 @@ setup_greetd_user() {
     ok "Izin direktori /etc/greetd telah disesuaikan."
 }
 
+# =====================================================================
+# SETUP PAM UNTUK GREETD — WAJIB agar systemd --user session terbentuk
+# =====================================================================
+# greetd yang di-build dari source (cargo) TIDAK menyertakan file PAM.
+# Tanpa /etc/pam.d/greetd yang memuat `pam_systemd.so` (biasanya lewat
+# include system-auth / common-session / system-login), login tetap
+# berhasil TAPI systemd TIDAK membuat user session (user@UID.service).
+# Akibatnya XDG_RUNTIME_DIR tidak ter-set dengan benar dan `systemctl --user`
+# di config sway GAGAL → graphical-session.target tidak pernah aktif →
+# waybar, mako, swww-daemon tidak jalan = LAYAR HITAM setelah login.
+# Selain itu, tanpa session ter-registrasi ke logind, user bukan "active
+# session" sehingga polkit menolak reboot/poweroff (reboot nge-hang / error).
+setup_greetd_pam() {
+    info "Menyiapkan PAM untuk greetd (agar systemd --user session terbentuk)..."
+
+    # Jika file sudah ada DAN sudah memuat session manager (pam_systemd atau
+    # include stack yang membawanya), jangan diutak-atik.
+    if [[ -f /etc/pam.d/greetd ]]; then
+        if grep -qE 'pam_systemd|pam_elogind|system-auth|common-session|system-login' /etc/pam.d/greetd 2>/dev/null; then
+            ok "/etc/pam.d/greetd sudah ada & memuat session manager — dibiarkan."
+            return 0
+        fi
+        sudo cp /etc/pam.d/greetd "/etc/pam.d/greetd.bak.$(date +%s)" 2>/dev/null || true
+        warn "/etc/pam.d/greetd ada tapi tanpa pam_systemd — akan ditulis ulang (backup dibuat)."
+    fi
+
+    local pam_content
+    case "$DISTRO_FAMILY" in
+        rhel|suse)
+            # RHEL/SUSE: stack 'system-auth' sudah memuat pam_systemd di session.
+            pam_content='#%PAM-1.0
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    optional     pam_keyinit.so force revoke
+session    include      system-auth
+-session   optional     pam_systemd.so' ;;
+        debian)
+            pam_content='#%PAM-1.0
+auth       include      common-auth
+account    include      common-account
+password   include      common-password
+session    include      common-session
+-session   optional     pam_systemd.so' ;;
+        arch|void)
+            # Arch/Void: 'system-login' sudah memuat pam_systemd.
+            pam_content='#%PAM-1.0
+auth       include      system-login
+account    include      system-login
+password   include      system-login
+session    include      system-login' ;;
+        alpine)
+            # Alpine pakai elogind; base-* bila pam terpasang.
+            pam_content='#%PAM-1.0
+auth       include      base-auth
+account    include      base-account
+password   include      base-password
+session    include      base-session
+-session   optional     pam_elogind.so' ;;
+        *)
+            # Fallback generik: coba system-auth (paling umum).
+            pam_content='#%PAM-1.0
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    include      system-auth
+-session   optional     pam_systemd.so' ;;
+    esac
+
+    echo "$pam_content" | sudo tee /etc/pam.d/greetd >/dev/null
+    sudo chmod 644 /etc/pam.d/greetd
+    ok "/etc/pam.d/greetd ditulis (memuat pam_systemd → systemd --user session aktif)."
+}
+
+# =====================================================================
+# SINKRONISASI WALLPAPER & STYLE LOGIN GREETD DENGAN TEMA AKTIF
+# =====================================================================
+# theme-switch (berjalan sebagai user tanpa password) perlu meng-update file
+# di /etc/greetd (milik root) saat ganti tema, agar wallpaper & warna login
+# ikut tema. Solusi aman: satu helper root-owned yang HANYA menulis ke
+# /etc/greetd, ditambah aturan sudoers NOPASSWD terbatas pada helper itu saja.
+setup_greetd_theme_sync() {
+    info "Menyiapkan sinkronisasi tema untuk login screen (greetd)..."
+
+    local helper=/usr/local/bin/sway-rice-apply-greetd-theme
+    sudo tee "$helper" >/dev/null << 'HELPER_EOF'
+#!/bin/sh
+# Update wallpaper & style login greetd mengikuti tema aktif.
+# Dipanggil via sudo (NOPASSWD) oleh theme-switch. HANYA menulis ke /etc/greetd.
+set -eu
+theme="${1:-}"
+# Validasi ketat: hanya nama tema alfanumerik (cegah path traversal / injeksi).
+case "$theme" in
+    ''|*[!a-zA-Z0-9_-]*) echo "nama tema tidak valid: '$theme'" >&2; exit 1 ;;
+esac
+user="${SUDO_USER:-$USER}"
+home="$(getent passwd "$user" | cut -d: -f6)"
+tdir="$home/.config/sway-rice/themes/$theme"
+[ -d "$tdir/config/greetd" ] || { echo "tema tidak ditemukan: $tdir" >&2; exit 1; }
+
+install -d -m 755 /etc/greetd/wallpaper
+[ -f "$tdir/config/greetd/config.toml" ]  && install -m 644 "$tdir/config/greetd/config.toml"  /etc/greetd/config.toml
+[ -f "$tdir/config/greetd/sway-config" ]  && install -m 644 "$tdir/config/greetd/sway-config"  /etc/greetd/sway-config
+[ -f "$tdir/config/greetd/gtkgreet.css" ] && install -m 644 "$tdir/config/greetd/gtkgreet.css" /etc/greetd/gtkgreet.css
+[ -f "$tdir/wallpaper/desktop-wallpaper.png" ] && install -m 644 "$tdir/wallpaper/desktop-wallpaper.png" /etc/greetd/wallpaper/login-wallpaper.png
+chown -R greeter:greeter /etc/greetd 2>/dev/null || true
+exit 0
+HELPER_EOF
+    sudo chmod 755 "$helper"
+    sudo chown root:root "$helper"
+
+    # Aturan sudoers TERBATAS: user hanya boleh menjalankan helper ini tanpa
+    # password. Helper sudah dibatasi hanya menulis ke /etc/greetd.
+    local sudoers=/etc/sudoers.d/sway-rice-greetd
+    local tmp; tmp="$(mktemp)"
+    printf '%s ALL=(root) NOPASSWD: %s\n' "$REAL_USER" "$helper" > "$tmp"
+    # Validasi syntax sebelum dipasang (cegah sudoers rusak = tidak bisa sudo).
+    if sudo visudo -cf "$tmp" >/dev/null 2>&1; then
+        sudo install -m 440 -o root -g root "$tmp" "$sudoers"
+        ok "Aturan sudoers greetd theme-sync dipasang (NOPASSWD terbatas 1 helper)."
+    else
+        warn "Validasi sudoers gagal — lewati. Wallpaper login tidak akan ikut ganti tema otomatis."
+    fi
+    rm -f "$tmp"
+}
+
 deploy_configs() {
     info "Menyalin konfigurasi ke direktori sistem dan pengguna..."
 
@@ -1826,6 +1952,8 @@ TIMEOUT_EOF
     ok "Konfigurasi greetd berhasil disalin ke /etc/greetd/"
 
     setup_greetd_user
+    setup_greetd_pam
+    setup_greetd_theme_sync
 
     mkdir -p "$HOME/wallpaper"
 

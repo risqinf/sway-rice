@@ -74,11 +74,18 @@ for w in json.load(sys.stdin):
     cp -f "$theme_dir/wallpaper/desktop-wallpaper.png" "$HOME/wallpaper/" 2>/dev/null || true
     cp -f "$theme_dir/wallpaper/fastfetch.png" "$HOME/wallpaper/" 2>/dev/null || true
 
-    # === Greetd (with timeout to avoid hanging on sudo password) ===
-    timeout 2 sudo -n cp -f "$theme_dir/config/greetd/config.toml" /etc/greetd/config.toml 2>/dev/null || true
-    timeout 2 sudo -n cp -f "$theme_dir/config/greetd/sway-config" /etc/greetd/sway-config 2>/dev/null || true
-    timeout 2 sudo -n cp -f "$theme_dir/config/greetd/gtkgreet.css" /etc/greetd/gtkgreet.css 2>/dev/null || true
-    timeout 2 sudo -n cp -f "$theme_dir/wallpaper/desktop-wallpaper.png" /etc/greetd/wallpaper/login-wallpaper.png 2>/dev/null || true
+    # === Greetd: update wallpaper & style login mengikuti tema ===
+    # Pakai helper root-owned dgn aturan sudoers NOPASSWD terbatas (dipasang
+    # oleh install.sh). Ini membuat wallpaper login greetd ikut ganti tema
+    # tanpa perlu password. Fallback ke `sudo -n cp` bila helper belum ada.
+    if [[ -x /usr/local/bin/sway-rice-apply-greetd-theme ]]; then
+        timeout 5 sudo -n /usr/local/bin/sway-rice-apply-greetd-theme "$theme" 2>/dev/null || true
+    else
+        timeout 2 sudo -n cp -f "$theme_dir/config/greetd/config.toml" /etc/greetd/config.toml 2>/dev/null || true
+        timeout 2 sudo -n cp -f "$theme_dir/config/greetd/sway-config" /etc/greetd/sway-config 2>/dev/null || true
+        timeout 2 sudo -n cp -f "$theme_dir/config/greetd/gtkgreet.css" /etc/greetd/gtkgreet.css 2>/dev/null || true
+        timeout 2 sudo -n cp -f "$theme_dir/wallpaper/desktop-wallpaper.png" /etc/greetd/wallpaper/login-wallpaper.png 2>/dev/null || true
+    fi
 
     # === Cursor theme per character ===
     local cursor_theme

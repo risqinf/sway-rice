@@ -9,22 +9,17 @@ else
     exit 1
 fi
 
-# graceful_poweroff: exit sway dulu agar systemd user services (waybar, mako,
-# portal, swww-daemon, dll.) berhenti dengan rapi via graphical-session.target,
-# BARU poweroff. Tanpa ini systemd harus SIGKILL semua — salah satu penyebab
-# shutdown/restart nge-hang menunggu proses yang tidak merespons SIGTERM.
-graceful_poweroff() {
-    if pgrep -x sway >/dev/null; then
-        swaymsg exit 2>/dev/null || true
-        # Tunggu maksimal 5 detik agar session turun bersih
-        for _ in 1 2 3 4 5 6 7 8 9 10; do
-            pgrep -x sway >/dev/null || break
-            sleep 0.5
-        done
-    fi
-    systemctl "$1"
-}
-
+# CATATAN PENTING soal reboot/poweroff:
+# JANGAN `swaymsg exit` dulu sebelum `systemctl reboot/poweroff`. Script ini
+# adalah proses ANAK dari sway — begitu sway exit, script ikut terbunuh
+# SEBELUM sempat menjalankan systemctl. Akibatnya poweroff/reboot batal dan
+# greetd cuma memunculkan layar login lagi (seperti logout).
+#
+# Cukup panggil `systemctl reboot/poweroff` langsung: systemd + logind yang
+# akan menurunkan graphical session (semua unit PartOf=graphical-session.target)
+# dengan rapi, lalu reboot/poweroff. Ini juga butuh session ter-registrasi
+# sebagai "active" di logind (disediakan oleh pam_systemd via /etc/pam.d/greetd)
+# supaya polkit mengizinkan tanpa password.
 case "$CHOSEN" in
     "  Lock")
         ~/.config/sway/lock.sh
@@ -33,10 +28,10 @@ case "$CHOSEN" in
         systemctl suspend
         ;;
     "  Restart")
-        graceful_poweroff reboot
+        systemctl reboot
         ;;
     "  Poweroff")
-        graceful_poweroff poweroff
+        systemctl poweroff
         ;;
     "  Logout")
         swaymsg exit
