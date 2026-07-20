@@ -1176,6 +1176,108 @@ build_fish() {
 }
 
 # =====================================================================
+# 6b. UTILITAS SISTEM BAWAAN DESKTOP (GNOME/KDE) — TAPI TIDAK ADA DI MINIMAL
+# =====================================================================
+# Rice ini awalnya dikembangkan di atas Rocky Linux yang SUDAH terpasang GNOME,
+# sehingga banyak tool "diam-diam" tersedia (python3, ImageMagick, pipewire,
+# dbus, gsettings, NetworkManager, fontconfig, dst). Di instalasi minimal /
+# server / distro lain, tool-tool ini BELUM tentu ada, padahal config sway,
+# waybar, dan script rice bergantung padanya. Pasang eksplisit via repo.
+#
+# Pemetaan nama paket dibedakan per family karena berbeda-beda.
+install_system_utils() {
+    info "=== Memasang utilitas sistem yang dibutuhkan config & script ==="
+
+    # --- ESENSIAL: fitur inti rusak tanpa ini ---
+    #   imagemagick     : blur lock screen (Super+L) + generator preview tema
+    #   python3         : auto-split dwindle tiling, theme-switcher, reload keybind
+    #   pipewire (+pulse): server audio (wpctl volume, pw-record perekaman)
+    #   wireplumber     : session manager pipewire (wpctl)
+    #   xdg-utils       : xdg-mime / xdg-settings / xdg-open (default apps)
+    #   dbus            : dbus-update-activation-environment (env portal)
+    #   fontconfig      : fc-cache (registrasi font)
+    #   dconf + schemas : gsettings (dark theme GTK + cursor theme)
+    #   NetworkManager  : nmtui / nm-connection-editor (klik network di waybar)
+    local essential=()
+    case "$DISTRO_FAMILY" in
+        arch)
+            essential=(imagemagick python pipewire pipewire-pulse wireplumber
+                       xdg-utils dbus fontconfig dconf gsettings-desktop-schemas
+                       glib2 networkmanager) ;;
+        debian)
+            essential=(imagemagick python3 pipewire pipewire-pulse wireplumber
+                       xdg-utils dbus fontconfig dconf-cli gsettings-desktop-schemas
+                       libglib2.0-bin network-manager) ;;
+        rhel)
+            essential=(ImageMagick python3 pipewire pipewire-pulseaudio wireplumber
+                       xdg-utils dbus fontconfig dconf gsettings-desktop-schemas
+                       glib2 NetworkManager NetworkManager-tui nm-connection-editor) ;;
+        suse)
+            essential=(ImageMagick python3 pipewire pipewire-pulseaudio wireplumber
+                       xdg-utils dbus-1 fontconfig dconf gsettings-desktop-schemas
+                       glib2-tools NetworkManager NetworkManager-connection-editor) ;;
+        alpine)
+            essential=(imagemagick python3 pipewire pipewire-pulse wireplumber
+                       xdg-utils dbus fontconfig dconf gsettings-desktop-schemas
+                       glib networkmanager) ;;
+        void)
+            essential=(ImageMagick python3 pipewire wireplumber
+                       xdg-utils dbus fontconfig dconf gsettings-desktop-schemas
+                       glib NetworkManager) ;;
+        *)
+            essential=(imagemagick python3 pipewire wireplumber xdg-utils dbus fontconfig) ;;
+    esac
+    if [[ ${#essential[@]} -gt 0 ]]; then
+        info "Utilitas esensial: ${essential[*]}"
+        run_pkg_install "${essential[@]}" || warn "Sebagian utilitas esensial gagal dipasang — cek $LOG_FILE"
+    fi
+
+    # Verifikasi cepat tool paling kritikal, beri panduan bila gagal.
+    _has_bin convert || _has_bin magick || warn "ImageMagick (convert/magick) tidak ada — lock screen blur & preview tema nonaktif."
+    _has_bin python3 || _has_bin python  || warn "python3 tidak ada — auto-split tiling & theme switcher tidak berfungsi."
+
+    # --- OPSIONAL: fitur tambahan; script sudah fallback bila tidak ada ---
+    #   cliphist : riwayat clipboard (Super+Shift+V)
+    #   wtype    : auto-paste setelah pilih item clipboard
+    #   wlsunset : night light / filter cahaya biru (quick-settings)
+    #   gammastep: alternatif night light
+    local optional=()
+    case "$DISTRO_FAMILY" in
+        arch)   optional=(cliphist wtype wlsunset) ;;
+        debian) optional=(wtype wlsunset gammastep) ;;
+        rhel)   optional=(wlsunset) ;;
+        suse)   optional=(wtype wlsunset) ;;
+        alpine) optional=(wtype wlsunset) ;;
+        void)   optional=(wtype wlsunset) ;;
+    esac
+    for pkg in "${optional[@]}"; do
+        run_pkg_install "$pkg" >>"$LOG_FILE" 2>&1 \
+            && ok "$pkg terpasang (opsional)." \
+            || warn "$pkg tidak tersedia di repo (opsional, dilewati)."
+    done
+
+    # cliphist tidak ada di repo kebanyakan distro (program Go). Coba build via
+    # `go install` bila Go tersedia — best-effort, tidak menggagalkan install.
+    install_cliphist
+}
+
+# cliphist: manajer riwayat clipboard untuk Wayland (dipakai Super+Shift+V).
+# Tersedia langsung di repo Arch; di distro lain di-build via Go.
+install_cliphist() {
+    _has_bin cliphist && { ok "cliphist sudah ada, skip."; return 0; }
+    if command -v go >/dev/null 2>&1; then
+        info "Build cliphist via Go (go install)..."
+        if GOBIN="$HOME/.local/bin" go install go.senan.xyz/cliphist@latest >>"$LOG_FILE" 2>&1 \
+            && _has_bin cliphist; then
+            ok "cliphist terpasang ke ~/.local/bin (riwayat clipboard aktif)."
+            return 0
+        fi
+    fi
+    warn "cliphist tidak terpasang — riwayat clipboard (Super+Shift+V) dinonaktifkan."
+    return 0
+}
+
+# =====================================================================
 # 7. MAIN INSTALL FLOW
 # =====================================================================
 install_repo_only_deps() {
@@ -1824,6 +1926,19 @@ print_summary() {
     if ! command -v nmtui >/dev/null 2>&1; then
         warn "nmtui tidak ada — install NetworkManager-tui (untuk Waybar network click)"
     fi
+    if _has_bin convert || _has_bin magick; then
+        ok "ImageMagick ✓"
+    else
+        warn "ImageMagick tidak ada — lock screen blur (Super+L) & preview tema nonaktif"
+    fi
+    if _has_bin python3 || _has_bin python; then
+        ok "python3 ✓"
+    else
+        err "python3 tidak ada — auto-split tiling & theme switcher TIDAK berfungsi"
+    fi
+    if ! _has_bin cliphist; then
+        warn "cliphist tidak ada — riwayat clipboard (Super+Shift+V) nonaktif"
+    fi
     if ! _has_bin xdg-desktop-portal-wlr; then
         warn "xdg-desktop-portal-wlr tidak ada — diperlukan untuk screen sharing di Discord/browser"
     else
@@ -1885,6 +2000,7 @@ main() {
     info "===== SWAY GENSHIN/INAZUMA RICE — UNIVERSAL INSTALLER ====="
     detect_os
     prepare_repos
+    install_system_utils
     install_repo_only_deps
     install_core_stack
     install_fonts

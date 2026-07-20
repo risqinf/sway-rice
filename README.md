@@ -181,6 +181,25 @@ sway-rice/
 | matugen | github.com/InioX/matugen | cargo |
 | xdg-desktop-portal-wlr | github.com/emersion | meson |
 
+## System Utilities (installed via package manager)
+
+These are usually pre-installed on full desktop images (e.g. Rocky Linux + GNOME)
+but missing on minimal/server installs. `install.sh` now installs them explicitly
+via the distro package manager, since the config and helper scripts depend on them:
+
+| Utility | Used for |
+|---------|----------|
+| python3 | dwindle auto-split tiling, theme switcher, config reload |
+| ImageMagick | lock screen blur (Super+L), theme preview generation |
+| pipewire + pipewire-pulse + wireplumber | audio, volume control, `pw-record` capture |
+| xdg-utils | default app associations (`xdg-mime`, `xdg-settings`) |
+| dbus | portal activation environment |
+| fontconfig | font cache (`fc-cache`) |
+| dconf + gsettings-desktop-schemas | GTK dark theme + cursor (`gsettings`) |
+| NetworkManager | `nmtui` / `nm-connection-editor` from Waybar |
+| cliphist *(optional)* | clipboard history (Super+Shift+V) |
+| wtype / wlsunset *(optional)* | auto-paste, night light |
+
 ## Documentation
 
 - **[QUICKSTART.md](QUICKSTART.md)** — 3-step installation

@@ -213,6 +213,28 @@ test_optional_binary "fastfetch" "fastfetch"
 test_optional_binary "wallust" "wallust"
 echo
 
+info "=== System Utilities (dibutuhkan config & script) ==="
+# python3 & ImageMagick esensial: tiling dwindle, theme switcher, lock blur.
+if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
+    ok "python3 (auto-split tiling, theme switcher)"
+    ((PASSED++))
+else
+    err "python3 - NOT FOUND (auto-split tiling & theme switcher rusak)"
+    ((FAILED++))
+fi
+if command -v convert >/dev/null 2>&1 || command -v magick >/dev/null 2>&1; then
+    ok "ImageMagick (lock screen blur, preview tema)"
+    ((PASSED++))
+else
+    warn "ImageMagick - NOT FOUND (lock screen blur & preview tema nonaktif)"
+    ((WARNINGS++))
+fi
+test_optional_binary "dbus-update-activation-environment" "dbus-update-activation-environment"
+test_optional_binary "gsettings (GTK dark theme)" "gsettings"
+test_optional_binary "xdg-mime (default apps)" "xdg-mime"
+test_optional_binary "cliphist (clipboard history)" "cliphist"
+echo
+
 info "=== Optional System Tools ==="
 test_optional_binary "tuned power profiles" "tuned-adm"
 test_optional_binary "Network Manager" "nmtui"
