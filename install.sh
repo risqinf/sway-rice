@@ -445,7 +445,7 @@ already_installed() {
 
         # === File manager ===
         nautilus)       _has_bin nautilus ;;
-        cosmic-files)   _has_bin cosmic-files ;;
+        thunar)         _has_bin thunar ;;
 
         # === Settings / audio / network ===
         pavucontrol)    _has_bin pavucontrol ;;
@@ -487,6 +487,7 @@ declare -A REPO_PKG=(
     [wl-clipboard]="wl-clipboard"
     [ffmpeg]="ffmpeg"
     [nautilus]="nautilus"
+    [thunar]="thunar"
     [seatd]="seatd"
     [brightnessctl]="brightnessctl"
     [pavucontrol]="pavucontrol"
@@ -823,37 +824,6 @@ build_rofi_wayland() {
     [[ $rc -eq 0 ]] && ok "rofi-wayland terpasang." || { err "Build rofi-wayland gagal."; return 1; }
 }
 
-build_cosmic_files() {
-    already_installed cosmic-files && { ok "cosmic-files sudah ada, skip."; return 0; }
-
-    # Coba repo dulu
-    info "Coba install cosmic-files via repo..."
-    if run_pkg_install cosmic-files >>"$LOG_FILE" 2>&1 && _has_bin cosmic-files; then
-        ok "cosmic-files terpasang via repo."
-        return 0
-    fi
-
-    ensure_cargo_path
-    command -v cargo >/dev/null || { err "cargo tidak tersedia, skip cosmic-files."; return 1; }
-    info "Build cosmic-files dari source (github)..."
-    local dir="$BUILD_ROOT/cosmic-files"
-    git clone --depth 1 https://github.com/pop-os/cosmic-files.git "$dir" >>"$LOG_FILE" 2>&1 || { err "Clone cosmic-files gagal"; return 1; }
-    local rc=0
-    (
-        cd "$dir" || exit 1
-        cargo build --release >>"$LOG_FILE" 2>&1 || exit 1
-        mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
-        install -Dm755 target/release/cosmic-files "$HOME/.local/bin/cosmic-files" >>"$LOG_FILE" 2>&1 || exit 1
-        if [[ -f "res/com.system76.CosmicFiles.desktop" ]]; then
-            mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
-            cp -r res/icons/* "$HOME/.local/share/icons/" 2>/dev/null || true
-            install -Dm644 res/com.system76.CosmicFiles.desktop "$HOME/.local/share/applications/" 2>/dev/null || true
-            sed -i "s|Exec=cosmic-files|Exec=$HOME/.local/bin/cosmic-files|g" "$HOME/.local/share/applications/com.system76.CosmicFiles.desktop" 2>/dev/null || true
-        fi
-    ) || rc=$?
-    [[ $rc -eq 0 ]] && ok "cosmic-files berhasil dibuild." || { err "Build cosmic-files gagal."; return 1; }
-}
-
 build_wofi() {
     already_installed wofi && { ok "wofi sudah ada, skip."; return 0; }
 
@@ -896,6 +866,35 @@ install_launcher() {
         ok "Launcher terpilih: wofi"; return 0
     fi
     err "Semua opsi launcher gagal diinstall."
+}
+
+install_filemanager() {
+    info "Menyiapkan file manager (nautilus/thunar)..."
+    if already_installed nautilus; then ok "File manager terdeteksi: nautilus (skip)."; return 0; fi
+    if already_installed thunar; then ok "File manager terdeteksi: thunar (skip)."; return 0; fi
+
+    # Belum ada sama sekali → coba pasang keduanya via repo (bukan fallback,
+    # coba dua-duanya supaya user punya pilihan; kalau salah satu/semua gagal
+    # tidak fatal, user bisa pasang manual sendiri nanti).
+    info "Tidak ada file manager terdeteksi, coba pasang thunar & nautilus via repo..."
+    local got_one=0
+    if try_repo_install thunar >>"$LOG_FILE" 2>&1 && already_installed thunar; then
+        ok "thunar terpasang via repo."
+        got_one=1
+    else
+        warn "thunar gagal/tidak ada di repo."
+    fi
+    if try_repo_install nautilus >>"$LOG_FILE" 2>&1 && already_installed nautilus; then
+        ok "nautilus terpasang via repo."
+        got_one=1
+    else
+        warn "nautilus gagal/tidak ada di repo."
+    fi
+
+    if [[ $got_one -eq 0 ]]; then
+        warn "thunar & nautilus gagal terpasang otomatis. Silakan install file manager pilihan Anda secara manual nanti."
+    fi
+    return 0
 }
 
 build_wallust() {
@@ -1296,7 +1295,7 @@ install_cliphist() {
 # =====================================================================
 install_repo_only_deps() {
     info "=== Memasang paket yang biasanya tersedia di repo resmi ==="
-    for pkg in mpv wl-clipboard ffmpeg nautilus seatd brightnessctl pavucontrol nm-applet; do
+    for pkg in mpv wl-clipboard ffmpeg seatd brightnessctl pavucontrol nm-applet; do
         if already_installed "$pkg"; then
             ok "$pkg sudah ada."
         elif try_repo_install "$pkg"; then
@@ -1308,6 +1307,8 @@ install_repo_only_deps() {
             fi
         fi
     done
+
+    install_filemanager
 
     # Runtime deps yang dipakai config sway/waybar tapi sering tidak terpasang
     # Install satu per satu karena availability berbeda per distro.
@@ -1340,7 +1341,6 @@ install_core_stack() {
     build_slurp
     build_mpvpaper
     build_brightnessctl
-    build_cosmic_files
     install_launcher
     build_fastfetch
     build_wallust
@@ -2081,6 +2081,13 @@ print_summary() {
     else
         err "launcher ✗ — semua opsi gagal"
         ((failed++))
+    fi
+
+    # Cek file manager
+    if already_installed nautilus || already_installed thunar; then
+        ok "file manager ✓"
+    else
+        warn "file manager ✗ — thunar & nautilus gagal terpasang, silakan install manual"
     fi
 
     echo
